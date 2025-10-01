@@ -14,8 +14,8 @@ android {
         applicationId "shmutalov.verusminer9000"
         minSdkVersion 22
         targetSdkVersion 28 // Android 10+ W^X policy prevents executing binaries from private storage on SDK 29+
-        versionCode 8
-        versionName "0.0.15"
+        versionCode 9
+        versionName "0.0.16"
         buildConfigField "long", "BUILD_TIME", System.currentTimeMillis() + "L"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

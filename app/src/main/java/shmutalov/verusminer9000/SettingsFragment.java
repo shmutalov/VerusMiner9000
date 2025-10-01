@@ -491,7 +491,10 @@ public class SettingsFragment extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String poolAddress = edPool.getText().toString().trim();
+                // Commented out auto-detection to prevent clearing the field while user is typing
+                // This was causing the pool address field to be cleared/changed while editing
+
+                /*String poolAddress = edPool.getText().toString().trim();
                 PoolItem[] pools = ProviderManager.getPools();
                 int position  = spPool.getSelectedItemPosition();
 
@@ -507,7 +510,7 @@ public class SettingsFragment extends Fragment {
                     if(position != poolSelected){
                         spPool.setSelection(poolSelected);
                     }
-                }
+                }*/
             }
         });
 
