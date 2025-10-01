@@ -2,7 +2,6 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace 'shmutalov.verusminer9000'
     compileSdkVersion 33
     buildToolsVersion "33.0.2"
 
@@ -14,7 +13,7 @@ android {
     defaultConfig {
         applicationId "shmutalov.verusminer9000"
         minSdkVersion 22
-        targetSdkVersion 33 // Updated from 28 - need to test executable permissions on Android 10+
+        targetSdkVersion 28 // Android 10+ W^X policy prevents executing binaries from private storage on SDK 29+
         versionCode 7
         versionName "0.0.14"
         buildConfigField "long", "BUILD_TIME", System.currentTimeMillis() + "L"

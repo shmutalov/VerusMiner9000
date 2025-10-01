@@ -174,16 +174,34 @@ public class VerusBinMiningService extends AbstractMiningService {
             Tools.copyDirectoryContents(this, libraryPath, privatePath);
             Tools.copyDirectoryContents(this, assetPath, privatePath);
             configTemplate = Tools.loadConfigTemplate(this, configPath);
-
-            // Fix for Android 10+ (SDK 29+): Ensure ccminer binary has executable permissions
-            File ccminerBinary = new File(privatePath, miner_ccminer);
-            if (ccminerBinary.exists()) {
-                boolean execSet = ccminerBinary.setExecutable(true, false);
-                Log.i(LOG_TAG, "Set executable permission on ccminer: " + execSet);
-            }
-
             Tools.logDirectoryFiles(new File(privatePath));
             lastAssetPath = assetPath;
+        }
+
+        // Fix for Android 10+ (SDK 29+): Always ensure ccminer binary has executable permissions
+        File ccminerBinary = new File(privatePath, miner_ccminer);
+        if (ccminerBinary.exists()) {
+            // Try setExecutable() first
+            boolean execSet = ccminerBinary.setExecutable(true, false);
+            Log.i(LOG_TAG, "setExecutable() result: " + execSet);
+
+            // Force chmod as backup - more reliable on some devices
+            try {
+                String chmodCmd = "chmod 755 " + ccminerBinary.getAbsolutePath();
+                Log.i(LOG_TAG, "Running: " + chmodCmd);
+                Process chmod = Runtime.getRuntime().exec(chmodCmd);
+                int chmodResult = chmod.waitFor();
+                Log.i(LOG_TAG, "chmod result: " + chmodResult);
+
+                // Verify it worked
+                boolean canExecute = ccminerBinary.canExecute();
+                Log.i(LOG_TAG, "Binary canExecute: " + canExecute);
+            } catch (Exception e) {
+                Log.e(LOG_TAG, "Error setting chmod: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } else {
+            Log.e(LOG_TAG, "ccminer binary not found at: " + ccminerBinary.getAbsolutePath());
         }
     }
 
@@ -343,8 +361,11 @@ public class VerusBinMiningService extends AbstractMiningService {
         try {
             Tools.writeConfig(configTemplate, config, privatePath);
 
+            // Android 10+ (SDK 29+) requires absolute path for executables due to SELinux
+            String ccminerPath = new File(privatePath, miner_ccminer).getAbsolutePath();
+
             String[] args = {
-                    "./" + miner_ccminer,
+                    ccminerPath,  // Use absolute path instead of ./ccminer
                     "--no-banner",
                     "--no-color",
                     "-a", algo,

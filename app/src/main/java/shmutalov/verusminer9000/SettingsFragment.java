@@ -530,14 +530,15 @@ public class SettingsFragment extends Fragment {
             Utils.showPopup(v, inflater, popupView);
         });
 
-        Button btnPerformanceModeHelp = view.findViewById(R.id.btnPerformanceModeHelp);
+        ImageView btnPerformanceModeHelp = view.findViewById(R.id.btnPerformanceModeHelp);
         btnPerformanceModeHelp.setOnClickListener(v -> {
-            Dialog dialog = new Dialog(getActivity());
-            dialog.setContentView(R.layout.helper_hardware_settings);
-            dialog.setCancelable(true);
-            TextView tvMessage = dialog.findViewById(R.id.message);
-            tvMessage.setText(R.string.performancemode_help);
-            dialog.show();
+            // inflate the layout of the popup window
+            View popupView = inflater.inflate(R.layout.helper_hardware_settings, null);
+            TextView tvMessage = popupView.findViewById(R.id.message);
+            if(tvMessage != null) {
+                tvMessage.setText(R.string.performancemode_help);
+            }
+            Utils.showPopup(v, inflater, popupView);
         });
 
         Button btnAmaycWarning = view.findViewById(R.id.btnAmaycWarning);
