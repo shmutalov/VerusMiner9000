@@ -767,6 +767,63 @@
                     android:layout_height="0.7dp"
                     android:background="@color/txt_main"/>
 
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="5dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingLeft="15dp"
+                    android:paddingRight="15dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_cores"
+                        app:tint="@color/txt_main"
+                        tools:ignore="ContentDescription" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginLeft="10dp"
+                        android:text="@string/performancemode"
+                        android:textColor="@color/txt_main"
+                        android:textSize="12sp" />
+
+                    <ImageView
+                        android:id="@+id/btnPerformanceModeHelp"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="5dp"
+                        android:layout_marginLeft="5dp"
+                        android:src="@drawable/ic_help"
+                        app:tint="@color/c_grey"
+                        tools:ignore="ContentDescription" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        tools:ignore="NestedWeights" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/chkPerformanceMode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:theme="@style/SwitchTheme" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="5dp"
+                    android:layout_width="fill_parent"
+                    android:layout_height="0.7dp"
+                    android:background="@color/txt_main"/>
+
             </LinearLayout>
 
         </ScrollView>

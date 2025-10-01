@@ -125,9 +125,7 @@ public class MainActivity extends BaseActivity
 
     private LinearLayout llMain, llLog, llHashrate, llStatus;
 
-    private ProgressBar pbPayout;
-    private boolean payoutEnabled;
-    protected IProviderListener payoutListener;
+    // Payout widget removed for performance - was already disabled
 
     private Timer timerHashrate = null;
     private TimerTask timerTaskHashrate = null;
@@ -155,6 +153,7 @@ public class MainActivity extends BaseActivity
     private Integer nIntensity = 1;
 
     private long nLastShareCount = 0;
+    private long lastUIUpdateTime = 0; // For throttling UI updates
 
     private Integer nNbMaxCores = 0;
 
@@ -224,7 +223,7 @@ public class MainActivity extends BaseActivity
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         assert pm != null;
         wl = pm.newWakeLock(PARTIAL_WAKE_LOCK, "app:sleeplock");
-        wl.acquire(10*60*1000L /*10 minutes*/);
+        // Performance: Don't acquire wake lock here - mining service handles it
 
         if(!isBatteryReceiverRegistered) {
             registerReceiver(batteryInfoReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
@@ -266,8 +265,6 @@ public class MainActivity extends BaseActivity
 
         // Controls
 
-        payoutEnabled = true;
-        pbPayout = findViewById(R.id.progresspayout);
         pbStatus = findViewById(R.id.progress_status);
 
         pbStatus.setMax(MAX_HASHRATE_TIMER * 2);
@@ -388,30 +385,8 @@ public class MainActivity extends BaseActivity
 
         ProviderManager.generate();
 
-        payoutListener = new IProviderListener() {
-            public void onStatsChange(ProviderData d) {
-                if (!payoutEnabled) {
-                    return;
-                }
+        // Payout widget removed - was consuming resources unnecessarily
 
-                PoolItem pi = ProviderManager.getSelectedPool();
-                if(pi == null) {
-                    return;
-                }
-
-                bPayoutDataReceived = true;
-
-                enablePayoutWidget(true, "XLA");
-                updatePayoutWidget(d);
-            }
-
-            @Override
-            public boolean onEnabledRequest() {
-                return payoutEnabled;
-            }
-        };
-
-        ProviderManager.request.setListener(payoutListener).start();
         ProviderManager.afterSave();
 
         startTimerTemperatures();
@@ -456,7 +431,8 @@ public class MainActivity extends BaseActivity
         };
 
         timerTemperatures = new Timer();
-        timerTemperatures.scheduleAtFixedRate(timerTaskTemperatures, 0, 10000);
+        // Reduced from 10s to 30s for performance - temperature changes slowly
+        timerTemperatures.scheduleAtFixedRate(timerTaskTemperatures, 0, 30000);
     }
 
     public void stoptTimerTemperatures() {
@@ -476,150 +452,7 @@ public class MainActivity extends BaseActivity
         }
     }
 
-    private void updatePayoutWidget(ProviderData d) {
-        if(d.isNew) {
-            enablePayoutWidget(false, "");
-        }
-        else if(d.miner.paid == null) {
-            enablePayoutWidget(false, "Loading...");
-        }
-        else {
-            enablePayoutWidget(true, "XLA");
-
-            // Payout
-            String sBalance = d.miner.balance;
-            sBalance = sBalance.replace("XLA", "").trim();
-            TextView tvBalance = findViewById(R.id.balance);
-            tvBalance.setText(sBalance);
-
-            float fMinPayout;
-            if(Config.read("mininggoal").equals(""))
-                fMinPayout = Utils.convertStringToFloat(d.pool.minPayout);
-            else
-                fMinPayout = Utils.convertStringToFloat(Config.read("mininggoal").trim());
-
-            float fBalance = Utils.convertStringToFloat(sBalance);
-            if (fBalance > 0 && fMinPayout > 0) {
-                pbPayout.setProgress(Math.round(fBalance));
-                pbPayout.setMax(Math.round(fMinPayout));
-            } else {
-                pbPayout.setProgress(0);
-                pbPayout.setMax(100);
-            }
-
-            String sPercentagePayout = String.valueOf(Math.round(fBalance / fMinPayout *100));
-            TextView tvPercentagePayout = findViewById(R.id.percentage);
-            tvPercentagePayout.setText(sPercentagePayout);
-        }
-    }
-
-    public void enablePayoutWidget(boolean enable, String text) {
-        TextView tvPayoutWidgetTitle = findViewById(R.id.payoutgoal);
-        TextView tvMessage = findViewById(R.id.payoutmessage);
-
-        if (enable) {
-            if(tvPayoutWidgetTitle.getVisibility() == View.VISIBLE)
-                return;
-
-            tvPayoutWidgetTitle.setVisibility(View.VISIBLE);
-
-            TextView tvBalance = findViewById(R.id.balance);
-            tvBalance.setVisibility(View.VISIBLE);
-
-            TextView tvXLAUnit = findViewById(R.id.xlaunit);
-            tvXLAUnit.setVisibility(View.VISIBLE);
-
-            TextView tvPercentage = findViewById(R.id.percentage);
-            tvPercentage.setVisibility(View.VISIBLE);
-
-            TextView tvPercentageUnit = findViewById(R.id.percentageunit);
-            tvPercentageUnit.setVisibility(View.VISIBLE);
-
-            tvMessage.setVisibility(View.GONE);
-        }
-        else {
-            if(tvPayoutWidgetTitle.getVisibility() != View.INVISIBLE) {
-
-                tvPayoutWidgetTitle.setVisibility(View.INVISIBLE);
-
-                TextView tvBalance = findViewById(R.id.balance);
-                tvBalance.setVisibility(View.INVISIBLE);
-
-                TextView tvXLAUnit = findViewById(R.id.xlaunit);
-                tvXLAUnit.setVisibility(View.INVISIBLE);
-
-                TextView tvPercentage = findViewById(R.id.percentage);
-                tvPercentage.setVisibility(View.INVISIBLE);
-
-                TextView tvPercentageUnit = findViewById(R.id.percentageunit);
-                tvPercentageUnit.setVisibility(View.INVISIBLE);
-            }
-
-            pbPayout.setProgress(0);
-            pbPayout.setMax(100);
-
-            if(text.equals("")) {
-                tvMessage.setVisibility(View.GONE);
-            }
-            else {
-                tvMessage.setVisibility(View.VISIBLE);
-                tvMessage.setText(text);
-            }
-        }
-    }
-
-    private boolean doesPoolSupportAPI() {
-        PoolItem pi = ProviderManager.getSelectedPool();
-
-        if(pi == null)
-            return false;
-
-        return (pi.getPoolType() != 0);
-    }
-
-    private void updatePayoutWidgetStatus() {
-        LinearLayout llPayoutWidget = findViewById(R.id.layout_payout);
-        llPayoutWidget.setVisibility(View.GONE);
-        payoutEnabled = false;
-
-        /*
-        if(doesPoolSupportAPI()) {
-            if(llPayoutWidget.getVisibility() != View.VISIBLE)
-                llPayoutWidget.setVisibility(View.VISIBLE);
-        }
-        else {
-            if(llPayoutWidget.getVisibility() != View.GONE)
-                llPayoutWidget.setVisibility(View.GONE);
-
-            return;
-        }
-
-        if (Config.read("address").equals("")) {
-            enablePayoutWidget(false, "");
-            payoutEnabled = false;
-            return;
-        }
-
-        PoolItem pi = ProviderManager.getSelectedPool();
-
-        if (!Config.read("init").equals("1") || pi == null) {
-            enablePayoutWidget(false, "");
-            payoutEnabled = false;
-            return;
-        }
-
-        if (pi.getPoolType() == 0) {
-            enablePayoutWidget(false, "");
-            payoutEnabled = false;
-            return;
-        }
-
-        if (!bPayoutDataReceived) {
-            enablePayoutWidget(false, "Loading...");
-        }
-
-        payoutEnabled = true;*/
-    }
+    // Payout widget methods removed for performance optimization
 
     private boolean isValidConfig() {
         Log.i(LOG_TAG, "isValidConfig");
@@ -651,7 +484,6 @@ public class MainActivity extends BaseActivity
             tvWorkerName.setText(sWorkerName);
         }
 
-        updatePayoutWidgetStatus();
         refreshLogOutputView();
         updateCores();
         adjustMetricsLayout();
@@ -765,13 +597,8 @@ public class MainActivity extends BaseActivity
     }
 
     public void updateStatsListener() {
+        // Payout widget removed for performance
         ProviderManager.afterSave();
-        ProviderManager.request.setListener(payoutListener).start();
-
-        if(!ProviderManager.data.isNew) {
-            updatePayoutWidget(ProviderManager.data);
-            enablePayoutWidget(true, "VRSC");
-        }
     }
 
     public void loadSettings() {
@@ -909,8 +736,6 @@ public class MainActivity extends BaseActivity
         super.onResume();
         updateUI();
 
-        ProviderManager.request.setListener(payoutListener).start();
-
         if(!isBatteryReceiverRegistered) {
             registerReceiver(batteryInfoReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
             isBatteryReceiverRegistered = true;
@@ -929,7 +754,18 @@ public class MainActivity extends BaseActivity
             frag.updateAddress();
         }
 
+        // Restart temperature timer when app resumes
+        startTimerTemperatures();
+
         refreshLogOutputView();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Performance optimization: Stop timers when app is backgrounded to save CPU/battery
+        stopTimerStatusHashrate();
+        stoptTimerTemperatures();
     }
 
     private void toggleMiningState() {
@@ -1156,6 +992,12 @@ public class MainActivity extends BaseActivity
     }
 
     private Spannable formatLogOutputText(String text) {
+        // Performance Mode: Skip expensive formatting entirely
+        boolean performanceMode = Config.read("performancemode").equals("1");
+        if(performanceMode) {
+            return new SpannableString(text);
+        }
+
         // Remove date and milliseconds from log
         String formatText = "]";
         if(text.contains(formatText)) {
@@ -1454,20 +1296,31 @@ public class MainActivity extends BaseActivity
                     @Override
                     public void onStatusChange(String status, double speed, double max, long accepted, long total, double difficuly, int connection) {
                         runOnUiThread(() -> {
+                            // Performance optimization: Throttle UI updates to max 1 per second
+                            long currentTime = System.currentTimeMillis();
+                            boolean shouldUpdate = (currentTime - lastUIUpdateTime) >= 1000;
+
+                            // Always append log (but will be throttled by performance mode formatting)
                             appendLogOutputText(status);
-                            tvAcceptedShares.setText(accepted + " / " + total);
-                            tvDifficulty.setText(NumberFormat.getNumberInstance(Locale.getDefault()).format(difficuly));
 
-                            if(nLastShareCount != accepted) {
-                                nLastShareCount = accepted;
+                            // Throttle other UI updates to reduce CPU usage
+                            if(shouldUpdate || nLastShareCount != accepted) {
+                                lastUIUpdateTime = currentTime;
+
+                                tvAcceptedShares.setText(accepted + " / " + total);
+                                tvDifficulty.setText(NumberFormat.getNumberInstance(Locale.getDefault()).format(difficuly));
+
+                                if(nLastShareCount != accepted) {
+                                    nLastShareCount = accepted;
+                                }
+
+                                if(accepted == 1) {
+                                    tvAcceptedShares.setTextColor(ResourcesCompat.getColor(getResources(), R.color.c_white, getTheme()));
+                                    tvDifficulty.setTextColor(ResourcesCompat.getColor(getResources(), R.color.c_white, getTheme()));
+                                }
+
+                                updateHashrate(speed, max);
                             }
-
-                            if(accepted == 1) {
-                                tvAcceptedShares.setTextColor(ResourcesCompat.getColor(getResources(), R.color.c_white, getTheme()));
-                                tvDifficulty.setTextColor(ResourcesCompat.getColor(getResources(), R.color.c_white, getTheme()));
-                            }
-
-                            updateHashrate(speed, max);
                         });
                     }
                 });
@@ -1524,7 +1377,9 @@ public class MainActivity extends BaseActivity
             return;
         }
 
-        if(bDisableAmayc)
+        // Performance Mode: Skip AMAYC ML predictions entirely (static temp control only)
+        boolean performanceMode = Config.read("performancemode").equals("1");
+        if(bDisableAmayc || performanceMode)
             return;
 
         int nCPU = Math.round(cpuTemp);
@@ -1539,6 +1394,14 @@ public class MainActivity extends BaseActivity
 
         // Send temperatures to AMAYC engine (asynchronously)
         int MAX_NUM_ARRAY = 6;
+        // Limit array size to prevent unbounded memory growth
+        if(listCPUTemp.size() > MAX_NUM_ARRAY * 2) {
+            listCPUTemp.subList(0, MAX_NUM_ARRAY).clear();
+        }
+        if(listBatteryTemp.size() > MAX_NUM_ARRAY * 2) {
+            listBatteryTemp.subList(0, MAX_NUM_ARRAY).clear();
+        }
+
         if(listCPUTemp.size() >= MAX_NUM_ARRAY || listBatteryTemp.size() >= MAX_NUM_ARRAY)
         {
             String uri = getResources().getString(R.string.amaycPostLink);

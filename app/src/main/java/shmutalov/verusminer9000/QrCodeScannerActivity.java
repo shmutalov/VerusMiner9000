@@ -6,100 +6,77 @@ package shmutalov.verusminer9000;
 
 import android.os.Bundle;
 import android.util.Log;
-import android.util.SparseArray;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.android.gms.samples.vision.barcodereader.BarcodeCapture;
-import com.google.android.gms.samples.vision.barcodereader.BarcodeGraphic;
-import com.google.android.gms.vision.CameraSource;
-import com.google.android.gms.vision.barcode.Barcode;
+import com.journeyapps.barcodescanner.CaptureManager;
+import com.journeyapps.barcodescanner.DecoratedBarcodeView;
 
-import java.util.List;
+public class QrCodeScannerActivity extends AppCompatActivity {
 
-import xyz.belvi.mobilevisionbarcodescanner.BarcodeRetriever;
+    private CaptureManager capture;
+    private DecoratedBarcodeView barcodeScannerView;
 
-public class QrCodeScannerActivity extends AppCompatActivity implements BarcodeRetriever {
-
-    public TextView scanResult;
-    BarcodeCapture barcodeCapture;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_qr_code_scanner);
-        barcodeCapture = (BarcodeCapture) getSupportFragmentManager().findFragmentById(R.id.barcode);
-        barcodeCapture.setRetrieval(this);
 
-        findViewById(R.id.stop).setOnClickListener(v -> {
-            barcodeCapture.stopScanning();
-            finish();
+        barcodeScannerView = findViewById(R.id.barcode);
+
+        capture = new CaptureManager(this, barcodeScannerView);
+        capture.initializeFromIntent(getIntent(), savedInstanceState);
+
+        barcodeScannerView.decodeContinuous(result -> {
+            if (result != null && result.getText() != null) {
+                String scannedAddress = result.getText();
+                Log.d("QRCODE", "Barcode read: " + scannedAddress);
+
+                if (Utils.verifyAddress(scannedAddress)) {
+                    Config.write("address", scannedAddress);
+                    Toast.makeText(this, "Address scanned successfully", Toast.LENGTH_SHORT).show();
+                    finish();
+                } else {
+                    Toast.makeText(this, "Invalid Verus address", Toast.LENGTH_SHORT).show();
+                }
+            }
         });
 
-        scanResult = findViewById(R.id.scanResult);
+        findViewById(R.id.stop).setOnClickListener(v -> finish());
 
-        barcodeCapture.setShowDrawRect(true)
-                .setSupportMultipleScan(false)
-                .setTouchAsCallback(true)
-                .shouldAutoFocus(true)
-                .setShowFlash(false)
-                .setBarcodeFormat(Barcode.ALL_FORMATS)
-                .setCameraFacing(CameraSource.CAMERA_FACING_BACK)
-                .setShouldShowText(false);
-        barcodeCapture.refresh();
+        capture.decode();
     }
 
     @Override
-    public void onRetrieved(final Barcode barcode) {
-        String miner = barcode.displayValue;
-        scanResult.setText("Verus Address : " + miner);
-        if(Utils.verifyAddress(miner)) {
-            Log.d("CONSOLE:QRCODE", "Barcode read: " + barcode.displayValue);
-
-            Config.write("address", miner);
-            barcodeCapture.stopScanning();
-
-            finish();
-
-            return;
-        }
-
-        Toast.makeText(MainActivity.contextOfApplication, "Invalid verus address", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onRetrievedMultiple(final Barcode closetToClick, final List<BarcodeGraphic> barcodeGraphics) {
-        final StringBuilder message = new StringBuilder();
-        message.append("Code selected : ");
-        message.append(closetToClick.displayValue);
-        message.append("\n\nother ");
-        message.append("codes in frame include : \n");
-
-        for (int index = 0; index < barcodeGraphics.size(); index++) {
-            Barcode barcode = barcodeGraphics.get(index).getBarcode();
-            message.append(index + 1).append(". ").append(barcode.displayValue).append("\n");
-        }
-        Log.d("CONSOLE:QRCODE:MULTIPLE", message.toString());
-    }
-    @Override
-    public void onBitmapScanned(SparseArray<Barcode> sparseArray) {
-        // when image is scanned and processed
-        for (int i = 0; i < sparseArray.size(); i++) {
-            Barcode barcode = sparseArray.valueAt(i);
-            Log.d("CONSOLE:QRCODE:VALUED", barcode.displayValue);
+    protected void onResume() {
+        super.onResume();
+        if (capture != null) {
+            capture.onResume();
         }
     }
 
     @Override
-    public void onRetrievedFailed(String reason) {
-        // in case of failure
-
-        Log.e("CONSOLE:QRCODE:FAIL", reason);
+    protected void onPause() {
+        super.onPause();
+        if (capture != null) {
+            capture.onPause();
+        }
     }
 
     @Override
-    public void onPermissionRequestDenied(){
-        Log.e("CONSOLE:QRCODE:FAIL", "DENIED");
+    protected void onDestroy() {
+        super.onDestroy();
+        if (capture != null) {
+            capture.onDestroy();
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (capture != null) {
+            capture.onSaveInstanceState(outState);
+        }
     }
 }

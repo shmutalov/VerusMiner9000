@@ -89,6 +89,8 @@
     <string name="pauseminingonbattery">Pause mining on battery power</string>
     <string name="keepscreenonwhenmining">Keep screen ON when mining</string>
     <string name="turnoffamayccontrol">Disable temperature control</string>
+    <string name="performancemode">Performance Mode</string>
+    <string name="performancemode_help">Performance Mode optimizes the app to use minimal device resources.\n\nWhen enabled:\n• Disables AMAYC ML predictions (uses only static temp control)\n• Reduces UI update frequency\n• Disables log text formatting\n• Minimizes background processing\n\nRecommended for maximum mining performance.</string>
     <string name="warning">Warning!</string>
     <string name="allworkers">All workers:</string>
     <string name="amaycpaused">Cannot resume mining when device is cooling</string>

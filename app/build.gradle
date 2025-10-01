@@ -2,18 +2,19 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion "29.0.2"
+    namespace 'shmutalov.verusminer9000'
+    compileSdkVersion 33
+    buildToolsVersion "33.0.2"
 
     compileOptions {
-        sourceCompatibility '1.8'
-        targetCompatibility '1.8'
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     defaultConfig {
         applicationId "shmutalov.verusminer9000"
         minSdkVersion 22
-        targetSdkVersion 28 // to avoid an error 13 when running exe in assets folder (sdk 29 gives the error)
+        targetSdkVersion 33 // Updated from 28 - need to test executable permissions on Android 10+
         versionCode 7
         versionName "0.0.14"
         buildConfigField "long", "BUILD_TIME", System.currentTimeMillis() + "L"
@@ -30,12 +31,12 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-    implementation 'com.google.android.material:material:1.2.1'
-    implementation 'com.github.KingsMentor:MobileVisionBarcodeScanner:2.0.0'
-    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'org.ocpsoft.prettytime:prettytime:4.0.2.Final'
-    implementation 'com.android.volley:volley:1.1.1'
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.10'
+    implementation 'org.ocpsoft.prettytime:prettytime:5.0.7.Final'
+    implementation 'com.android.volley:volley:1.2.1'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
 }

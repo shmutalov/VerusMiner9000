@@ -71,7 +71,7 @@ public class SettingsFragment extends Fragment {
         SeekBar sbCores;
         TextView tvCoresNb, tvCoresMax;
 
-        SwitchMaterial swDisableTempControl, swPauseOnBattery, swKeepScreenOnWhenMining;
+        SwitchMaterial swDisableTempControl, swPauseOnBattery, swKeepScreenOnWhenMining, swPerformanceMode;
 
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
         Context appContext = MainActivity.getContextOfApplication();
@@ -107,6 +107,7 @@ public class SettingsFragment extends Fragment {
         swPauseOnBattery = view.findViewById(R.id.chkPauseOnBattery);
         swKeepScreenOnWhenMining = view.findViewById(R.id.chkKeepScreenOnWhenMining);
         swDisableTempControl = view.findViewById(R.id.chkAmaycOff);
+        swPerformanceMode = view.findViewById(R.id.chkPerformanceMode);
 
         // Pool spinner
         PoolItem[] pools = ProviderManager.getPools();
@@ -179,6 +180,9 @@ public class SettingsFragment extends Fragment {
         if(checkStatusScreenOn) {
             swKeepScreenOnWhenMining.setChecked(true);
         }
+
+        boolean performanceMode = !Config.read("performancemode").equals("0");
+        swPerformanceMode.setChecked(performanceMode);
 
         if (!Config.read("address").isEmpty()) {
             edAddress.setText(Config.read("address"));
@@ -416,6 +420,7 @@ public class SettingsFragment extends Fragment {
 
             Config.write("pauseonbattery", swPauseOnBattery.isChecked() ? "1" : "0");
             Config.write("keepscreenonwhenmining", swKeepScreenOnWhenMining.isChecked() ? "1" : "0");
+            Config.write("performancemode", swPerformanceMode.isChecked() ? "1" : "0");
 
             Config.write("init", "1");
 
@@ -523,6 +528,16 @@ public class SettingsFragment extends Fragment {
             // inflate the layout of the popup window
             View popupView = inflater.inflate(R.layout.helper_hardware_settings, null);
             Utils.showPopup(v, inflater, popupView);
+        });
+
+        Button btnPerformanceModeHelp = view.findViewById(R.id.btnPerformanceModeHelp);
+        btnPerformanceModeHelp.setOnClickListener(v -> {
+            Dialog dialog = new Dialog(getActivity());
+            dialog.setContentView(R.layout.helper_hardware_settings);
+            dialog.setCancelable(true);
+            TextView tvMessage = dialog.findViewById(R.id.message);
+            tvMessage.setText(R.string.performancemode_help);
+            dialog.show();
         });
 
         Button btnAmaycWarning = view.findViewById(R.id.btnAmaycWarning);

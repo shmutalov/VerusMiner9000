@@ -174,6 +174,14 @@ public class VerusBinMiningService extends AbstractMiningService {
             Tools.copyDirectoryContents(this, libraryPath, privatePath);
             Tools.copyDirectoryContents(this, assetPath, privatePath);
             configTemplate = Tools.loadConfigTemplate(this, configPath);
+
+            // Fix for Android 10+ (SDK 29+): Ensure ccminer binary has executable permissions
+            File ccminerBinary = new File(privatePath, miner_ccminer);
+            if (ccminerBinary.exists()) {
+                boolean execSet = ccminerBinary.setExecutable(true, false);
+                Log.i(LOG_TAG, "Set executable permission on ccminer: " + execSet);
+            }
+
             Tools.logDirectoryFiles(new File(privatePath));
             lastAssetPath = assetPath;
         }
@@ -249,6 +257,12 @@ public class VerusBinMiningService extends AbstractMiningService {
             process.destroy();
             process = null;
         }
+
+        // Performance: Release wake lock when stopping mining
+        if (wl != null && wl.isHeld()) {
+            wl.release();
+            wl = null;
+        }
     }
 
     private static String getIpByHost(PoolItem pi) {
@@ -322,8 +336,9 @@ public class VerusBinMiningService extends AbstractMiningService {
         }
 
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        wl = pm.newWakeLock(PARTIAL_WAKE_LOCK, "app:sleeplock");
-        wl.acquire(10*60*1000L /*10 minutes*/);
+        wl = pm.newWakeLock(PARTIAL_WAKE_LOCK, "app:mininglock");
+        // Performance: Acquire wake lock indefinitely while mining (released when stopped)
+        wl.acquire();
 
         try {
             Tools.writeConfig(configTemplate, config, privatePath);
