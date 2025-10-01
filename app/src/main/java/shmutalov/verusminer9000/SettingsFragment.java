@@ -75,10 +75,11 @@ public class SettingsFragment extends Fragment {
                 result -> {
                     if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                         String scannedAddress = result.getData().getStringExtra("scanned_address");
-                        if (scannedAddress != null && !scannedAddress.isEmpty()) {
+                        if (scannedAddress != null && !scannedAddress.isEmpty() && edAddress != null) {
                             skipAddressUpdate = true;
                             edAddress.setText(scannedAddress);
-                            skipAddressUpdate = false;
+                            // Keep flag true to prevent any async updates
+                            edAddress.postDelayed(() -> skipAddressUpdate = false, 500);
                         }
                     }
                 });
@@ -205,7 +206,7 @@ public class SettingsFragment extends Fragment {
         boolean performanceMode = !Config.read("performancemode").equals("0");
         swPerformanceMode.setChecked(performanceMode);
 
-        if (!Config.read("address").isEmpty()) {
+        if (!Config.read("address").isEmpty() && !skipAddressUpdate) {
             edAddress.setText(Config.read("address"));
         }
 
@@ -627,6 +628,11 @@ public class SettingsFragment extends Fragment {
     }
 
     public void updateAddress() {
+        // Don't update if we just scanned a QR code
+        if (skipAddressUpdate) {
+            return;
+        }
+
         String address =  Config.read("address");
         if (edAddress == null || address.isEmpty()) {
             return;

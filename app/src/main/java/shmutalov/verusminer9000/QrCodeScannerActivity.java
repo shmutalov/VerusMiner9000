@@ -12,13 +12,50 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.journeyapps.barcodescanner.CaptureManager;
+import com.google.zxing.ResultPoint;
+import com.journeyapps.barcodescanner.BarcodeCallback;
+import com.journeyapps.barcodescanner.BarcodeResult;
 import com.journeyapps.barcodescanner.DecoratedBarcodeView;
+
+import java.util.List;
 
 public class QrCodeScannerActivity extends AppCompatActivity {
 
-    private CaptureManager capture;
     private DecoratedBarcodeView barcodeScannerView;
+    private boolean resultHandled = false;
+
+    private final BarcodeCallback callback = new BarcodeCallback() {
+        @Override
+        public void barcodeResult(BarcodeResult result) {
+            if (resultHandled) {
+                return;
+            }
+
+            if (result != null && result.getText() != null) {
+                String scannedAddress = result.getText();
+
+                if (Utils.verifyAddress(scannedAddress)) {
+                    resultHandled = true;
+                    barcodeScannerView.pause();
+
+                    // Return the result to the calling activity
+                    Intent resultIntent = new Intent();
+                    resultIntent.putExtra("scanned_address", scannedAddress);
+                    setResult(Activity.RESULT_OK, resultIntent);
+
+                    Toast.makeText(QrCodeScannerActivity.this, "Address scanned successfully", Toast.LENGTH_SHORT).show();
+                    finish();
+                } else {
+                    Toast.makeText(QrCodeScannerActivity.this, "Invalid Verus address", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+
+        @Override
+        public void possibleResultPoints(List<ResultPoint> resultPoints) {
+            // Not used
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,63 +63,20 @@ public class QrCodeScannerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_qr_code_scanner);
 
         barcodeScannerView = findViewById(R.id.barcode);
-
-        capture = new CaptureManager(this, barcodeScannerView);
-        capture.initializeFromIntent(getIntent(), savedInstanceState);
-
-        barcodeScannerView.decodeContinuous(result -> {
-            if (result != null && result.getText() != null) {
-                String scannedAddress = result.getText();
-                Log.d("QRCODE", "Barcode read: " + scannedAddress);
-
-                if (Utils.verifyAddress(scannedAddress)) {
-                    // Return the result to the calling activity
-                    Intent resultIntent = new Intent();
-                    resultIntent.putExtra("scanned_address", scannedAddress);
-                    setResult(Activity.RESULT_OK, resultIntent);
-
-                    Toast.makeText(this, "Address scanned successfully", Toast.LENGTH_SHORT).show();
-                    finish();
-                } else {
-                    Toast.makeText(this, "Invalid Verus address", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+        barcodeScannerView.decodeContinuous(callback);
 
         findViewById(R.id.stop).setOnClickListener(v -> finish());
-
-        capture.decode();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (capture != null) {
-            capture.onResume();
-        }
+        barcodeScannerView.resume();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (capture != null) {
-            capture.onPause();
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (capture != null) {
-            capture.onDestroy();
-        }
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        if (capture != null) {
-            capture.onSaveInstanceState(outState);
-        }
+        barcodeScannerView.pause();
     }
 }
