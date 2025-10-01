@@ -88,20 +88,40 @@ public final class ProviderManager {
         // Verus Official pool
         add(
                 "Verus Project (Official Pool)",
-                "stratum+tcp://pool.veruscoin.io",
-                "9999",
+                "stratum+tcp://pool.verus.io",
+                "9998",
                 1000,
-                "https://pool.veruscoin.io/",
+                "https://pool.verus.io/",
                 ""
         );
 
-        // Alphatech IT
+        // PaddyPool
         add(
-                "Alphatech IT",
-                "stratum+tcp://verus.alphatechit.co.uk",
+                "PaddyPool",
+                "stratum+tcp://stratum-eu.paddypool.net",
+                "9998",
+                1000,
+                "https://paddypool.net/",
+                ""
+        );
+
+        // An Interesting Hole
+        add(
+                "An Interesting Hole",
+                "stratum+tcp://verus.aninterestinghole.xyz",
+                "9998",
+                1000,
+                "https://aninterestinghole.xyz/",
+                ""
+        );
+
+        // VerusFarm
+        add(
+                "VerusFarm",
+                "stratum+tcp://verus.farm",
                 "9999",
                 1000,
-                "https://verus.alphatechit.co.uk/",
+                "https://verus.farm/",
                 ""
         );
 

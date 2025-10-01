@@ -9,6 +9,7 @@
 package shmutalov.verusminer9000;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -34,6 +35,8 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.AdapterView;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -51,6 +54,8 @@ public class SettingsFragment extends Fragment {
 
     TextInputLayout tilAddress;
     private EditText edAddress, edPassword, edWorkerName, edUsernameparameters;
+    private boolean isUserEditingPool = false;
+    private boolean skipAddressUpdate = false;
 
     private Integer nMaxCPUTemp = 65; // 55,60,65,70,75
     private Integer nMaxBatteryTemp = 40; // 30,35,40,45,50
@@ -59,9 +64,25 @@ public class SettingsFragment extends Fragment {
     private SeekBar sbCPUTemp, sbBatteryTemp, sbCooldown;
     private TextView tvCPUMaxTemp, tvBatteryMaxTemp, tvCooldown;
 
+    private ActivityResultLauncher<Intent> qrScannerLauncher;
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        // Register QR scanner result handler
+        qrScannerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                        String scannedAddress = result.getData().getStringExtra("scanned_address");
+                        if (scannedAddress != null && !scannedAddress.isEmpty()) {
+                            skipAddressUpdate = true;
+                            edAddress.setText(scannedAddress);
+                            skipAddressUpdate = false;
+                        }
+                    }
+                });
+
         ProviderManager.generate();
 
         Button bSave;
@@ -282,11 +303,17 @@ public class SettingsFragment extends Fragment {
         spPool.setOnItemSelectedListener(new OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
-                if (Config.read("init").equals("1")) {
+                // Don't restore fields from config if we just scanned a QR code
+                if (Config.read("init").equals("1") && !skipAddressUpdate) {
                     edAddress.setText(Config.read("address"));
                     edUsernameparameters.setText(Config.read("usernameparameters"));
                     edPassword.setText(Config.read("password"));
                     edWorkerName.setText(Config.read("workername"));
+                }
+
+                // Don't update pool/port fields if user is actively typing in pool field
+                if (isUserEditingPool) {
+                    return;
                 }
 
                 if (position == 0){
@@ -453,10 +480,12 @@ public class SettingsFragment extends Fragment {
 
             @Override
             public void afterTextChanged(Editable s) {
+                isUserEditingPool = false;
             }
 
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                isUserEditingPool = true;
             }
 
             @Override
@@ -486,12 +515,6 @@ public class SettingsFragment extends Fragment {
 
         bQrCode.setOnClickListener(v -> {
             Context appContext1 = MainActivity.getContextOfApplication();
-
-            // TODO: Fix QR Code bug, then enable that feature
-            if (true) {
-                Toast.makeText(appContext1, "QR Code scanning feature temporary disabled.", Toast.LENGTH_LONG).show();
-                return;
-            }
 
             if (Build.VERSION.SDK_INT >= 23) {
                 if (ContextCompat.checkSelfPermission(appContext1, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -582,24 +605,17 @@ public class SettingsFragment extends Fragment {
     }
 
     private void startQrCodeActivity() {
-        Context appContext = MainActivity.getContextOfApplication();
         try {
-            Intent intent = new Intent(appContext, QrCodeScannerActivity.class);
-            startActivity(intent);
+            Intent intent = new Intent(getActivity(), QrCodeScannerActivity.class);
+            qrScannerLauncher.launch(intent);
         }catch (Exception e) {
-            Toast.makeText(appContext, e.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.getContextOfApplication(), e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         Context appContext = MainActivity.getContextOfApplication();
-
-        // TODO: Fix QR Code bug, then enable that feature
-        if (true) {
-            Toast.makeText(appContext, "QR Code scanning feature temporary disabled.", Toast.LENGTH_LONG).show();
-            return;
-        }
 
         if (requestCode == 100) {
             if (permissions[0].equals(Manifest.permission.CAMERA) && grantResults[0] == PackageManager.PERMISSION_GRANTED) {

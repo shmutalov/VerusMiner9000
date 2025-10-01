@@ -127,13 +127,70 @@ Native ccminer binaries stored in assets:
 
 ## Important Development Notes
 
-- The app now targets Android SDK 33 with executable permission fix for Android 10+ (VerusBinMiningService.java:178-183)
+### Android SDK Targeting Strategy
+
+**Current Configuration:**
+- `compileSdkVersion 33` (build.gradle:5) - Compile against modern Android APIs
+- `targetSdkVersion 28` (build.gradle:16) - **CRITICAL: Must remain 28**
+
+**Why targetSdk 28 is Required:**
+
+Android 10 (API 29) introduced the W^X (Write XOR Execute) security policy that prevents apps from executing binaries stored in private app directories (`/data/user/0/[package]/files/`). This policy applies to apps targeting SDK 29 or higher.
+
+Since this app executes the native ccminer binary from private storage, it **must** target SDK 28 to maintain compatibility with Android 10+ devices. The absolute path execution and chmod 755 permissions are correct, but insufficient on SDK 29+.
+
+**Evidence of W^X Policy:**
+- Error: `java.io.IOException: Cannot run program "/data/.../ccminer": error=13, Permission denied`
+- Occurs even with:
+  - Correct file permissions (chmod 755)
+  - Absolute paths (not relative ./ccminer)
+  - File.setExecutable(true) confirming executable bit set
+- Only resolved by reverting targetSdk from 33 → 28
+
+**Alternative Solution for Future (targetSdk 33 Compatible):**
+
+If targeting SDK 29+ becomes necessary in the future, the following approach can be used (per [Stack Overflow solution](https://stackoverflow.com/a/64792194)):
+
+1. **Move binaries to native lib directory:**
+   - From: `app/src/main/assets/ccminer/[abi]/ccminer`
+   - To: `app/src/main/jniLibs/[abi]/libccminer.so`
+   - Rename executable with `lib` prefix and `.so` extension
+
+2. **Enable native lib extraction:**
+   ```xml
+   <application android:extractNativeLibs="true" ...>
+   ```
+
+3. **Update code to use native lib path:**
+   ```java
+   // In VerusBinMiningService.java
+   String nativeLibDir = getApplicationInfo().nativeLibraryDir;
+   String ccminerPath = new File(nativeLibDir, "libccminer.so").getAbsolutePath();
+   ```
+
+4. **Trade-offs:**
+   - ✅ Allows targetSdk 33 with full modern API support
+   - ✅ Native libs are read-only (better security)
+   - ❌ Larger APK size (less efficient compression than assets)
+   - ❌ Requires restructuring existing code/assets
+   - ❌ Needs thorough testing across devices
+
+**Current Approach Benefits:**
+- ✅ Proven stable and mining successfully
+- ✅ No restructuring required
+- ✅ CompileSdk 33 provides modern build features
+- ✅ Works on Android 5.1 through Android 15
+
+### Other Important Notes
+
 - MinifyEnabled is disabled because it breaks JSON parsing for pool API (build.gradle:26)
 - The app uses deprecated `getDrawingCache()` for screenshot sharing (MainActivity.java:1774-1778)
 - Wake locks are optimized to only run during mining (VerusBinMiningService.java:335)
 - Log output is pruned when exceeding `Config.logMaxLength` (50000 chars) to prevent memory issues
 - Android 13+ requires runtime notification permission (POST_NOTIFICATIONS in manifest)
 - Hardware acceleration is disabled for MainActivity to free GPU resources for mining (AndroidManifest.xml:37)
+- Binary permissions set with both `setExecutable()` and `chmod 755` for maximum compatibility (VerusBinMiningService.java:181-203)
+- Absolute paths used for binary execution to satisfy SELinux requirements (VerusBinMiningService.java:365)
 
 ## Performance Optimizations
 

@@ -5,6 +5,7 @@
 package shmutalov.verusminer9000;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
@@ -17,12 +18,15 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
 public class WizardAddressActivity extends BaseActivity {
+    private ActivityResultLauncher<Intent> qrScannerLauncher;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,6 +36,20 @@ public class WizardAddressActivity extends BaseActivity {
             finish();
             return;
         }
+
+        // Register QR scanner result handler
+        qrScannerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                        String scannedAddress = result.getData().getStringExtra("scanned_address");
+                        if (scannedAddress != null && !scannedAddress.isEmpty()) {
+                            View view2 = findViewById(android.R.id.content).getRootView();
+                            TextInputEditText tvAddress = view2.findViewById(R.id.addressWizard);
+                            tvAddress.setText(scannedAddress);
+                        }
+                    }
+                });
 
         setContentView(R.layout.fragment_wizard_address);
     }
@@ -45,12 +63,7 @@ public class WizardAddressActivity extends BaseActivity {
 
     public void onScanQrCode(View view) {
         Context appContext = WizardAddressActivity.this;
-        // TODO: Fix QR Code bug, then enable that feature
-        if (true) {
-            Toast.makeText(appContext, "QR Code scanning feature temporary disabled.", Toast.LENGTH_LONG).show();
-            return;
-        }
-        
+
         if (Build.VERSION.SDK_INT >= 23) {
             if (ContextCompat.checkSelfPermission(appContext, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.CAMERA}, 100);
@@ -65,29 +78,17 @@ public class WizardAddressActivity extends BaseActivity {
     }
 
     private void startQrCodeActivity() {
-        View view2 = findViewById(android.R.id.content).getRootView();
-
-        Context appContext = WizardAddressActivity.this;
-
         try {
-            Intent intent = new Intent(appContext, QrCodeScannerActivity.class);
-            startActivity(intent);
-
-            TextView tvAddress = view2.findViewById(R.id.address);
-            tvAddress.setText(Config.read("address"));
+            Intent intent = new Intent(this, QrCodeScannerActivity.class);
+            qrScannerLauncher.launch(intent);
         } catch (Exception e) {
-            Toast.makeText(appContext, e.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         Context appContext = WizardAddressActivity.this;
-        // TODO: Fix QR Code bug, then enable that feature
-        if (true) {
-            Toast.makeText(appContext, "QR Code scanning feature temporary disabled.", Toast.LENGTH_LONG).show();
-            return;
-        }
 
         if (requestCode == 100) {
             if (permissions[0].equals(Manifest.permission.CAMERA) && grantResults[0] == PackageManager.PERMISSION_GRANTED) {

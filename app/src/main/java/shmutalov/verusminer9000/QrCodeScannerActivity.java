@@ -4,6 +4,8 @@
 
 package shmutalov.verusminer9000;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -34,7 +36,11 @@ public class QrCodeScannerActivity extends AppCompatActivity {
                 Log.d("QRCODE", "Barcode read: " + scannedAddress);
 
                 if (Utils.verifyAddress(scannedAddress)) {
-                    Config.write("address", scannedAddress);
+                    // Return the result to the calling activity
+                    Intent resultIntent = new Intent();
+                    resultIntent.putExtra("scanned_address", scannedAddress);
+                    setResult(Activity.RESULT_OK, resultIntent);
+
                     Toast.makeText(this, "Address scanned successfully", Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
