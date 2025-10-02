@@ -3,7 +3,7 @@
 A high performance and open-source application for mining Veruscoin on Android mobile devices.
 
 <p align="center">
-  <img src="https://wiki.veruscoin.io/img/favicon.png" width="128" title="Veruscoin">
+  <img src="https://verus.io/img/brand-assets/verus-logo-blue-512.png" width="256" title="Veruscoin">
 </p>
 
 ## Supported CPU instruction sets
@@ -23,12 +23,12 @@ A high performance and open-source application for mining Veruscoin on Android m
 This application is built upon the libraries of ccminer
 - Miner: [ccminer](https://github.com/monkins1010/ccminer)
 - Android port: [ccminer](https://github.com/shmutalov/ccminer)
-- Algorithm: [Verushash](https://veruscoin.io/downloads/VerusVision.pdf)
+- Algorithm: [Verushash](https://verus.io/papers/VerusVision.pdf)
 
 ## Usage
 ### Settings
 #### Pool
-When opening the application for the first time, you have to specify the pool that you want to use to mine XLA. Some predefined pools have been configured to make it easier for you. You can still select 'custom' if you wish to use a pool that is not included in the predefined list. More information about the port number can be found on the pools' website, but if you are not sure you can use port '3333'.
+When opening the application for the first time, you have to specify the pool that you want to use to mine `VRSC`. Some predefined pools have been configured to make it easier for you. You can still select 'custom' if you wish to use a pool that is not included in the predefined list. More information about the port number can be found on the pools' website, but if you are not sure you can use port '3333'.
 
 The 'Worker name or pool options' field can be left blank if the pool doesn't use any options/password. In this case, the worker name will be set to your device type (make and model) by default so you can easily identify it on the pool.
 
