@@ -8,6 +8,7 @@ A high performance and open-source application for mining Veruscoin on Android m
 
 ## Supported CPU instruction sets
 - **arm64-v8a**
+- **armeabi-v7a**
 - **x86-64**
 
 ## Features		
