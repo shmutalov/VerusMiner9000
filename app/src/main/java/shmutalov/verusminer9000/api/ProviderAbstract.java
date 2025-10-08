@@ -46,7 +46,7 @@ public abstract class ProviderAbstract extends AsyncTask<Void, Void, Void> {
     protected Void doInBackground(Void... voids) {
         try {
             onBackgroundFetchData();
-        } catch (Exception e) {
+        } catch (Exception ignored) {
 
         }
 

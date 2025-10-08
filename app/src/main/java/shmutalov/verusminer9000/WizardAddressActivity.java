@@ -10,7 +10,6 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
@@ -20,6 +19,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.textfield.TextInputEditText;
@@ -64,16 +64,10 @@ public class WizardAddressActivity extends BaseActivity {
     public void onScanQrCode(View view) {
         Context appContext = WizardAddressActivity.this;
 
-        if (Build.VERSION.SDK_INT >= 23) {
-            if (ContextCompat.checkSelfPermission(appContext, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[]{Manifest.permission.CAMERA}, 100);
-            }
-            else {
-                startQrCodeActivity();
-            }
-        }
-        else {
-            Toast.makeText(appContext, "This version of Android does not support Qr Code.", Toast.LENGTH_LONG).show();
+        if (ContextCompat.checkSelfPermission(appContext, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.CAMERA}, 100);
+        } else {
+            startQrCodeActivity();
         }
     }
 
@@ -87,7 +81,8 @@ public class WizardAddressActivity extends BaseActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         Context appContext = WizardAddressActivity.this;
 
         if (requestCode == 100) {

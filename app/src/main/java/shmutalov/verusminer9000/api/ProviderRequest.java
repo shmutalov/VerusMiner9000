@@ -75,7 +75,7 @@ public class ProviderRequest{
         timer.schedule(current, Config.statsDelay);
     }
 
-    public class ProviderTimer extends Timer {
+    public static class ProviderTimer extends Timer {
         public ProviderTimer() {
             super("ProviderTimer");
         }

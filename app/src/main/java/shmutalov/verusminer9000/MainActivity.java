@@ -461,10 +461,10 @@ public class MainActivity extends BaseActivity
         String port = pi == null ? "" : pi.getPort();
 
         boolean result = init.equals("1") &&
-                !address.equals("") &&
+                !address.isEmpty() &&
                 pi != null &&
-                !pi.getPool().equals("") &&
-                !pi.getPort().equals("");
+                !pi.getPool().isEmpty() &&
+                !pi.getPort().isEmpty();
 
         Log.i(LOG_TAG, String.format("isValidConfig [init = %s, address = %s, pool = %s, port = %s] == %b", init, address, pool, port, result));
 
@@ -477,7 +477,7 @@ public class MainActivity extends BaseActivity
         // Worker Name
         TextView tvWorkerName = findViewById(R.id.workername);
         String sWorkerName = Config.read("workername");
-        if(!sWorkerName.equals("")) {
+        if(!sWorkerName.isEmpty()) {
             tvWorkerName.setText(sWorkerName);
         }
 
@@ -1020,7 +1020,7 @@ public class MainActivity extends BaseActivity
         }
 
         if (text.contains("COMMANDS")) {
-            text = text + System.getProperty("line.separator");
+            text = text + System.lineSeparator();
         }
 
         boolean speed = false;
@@ -1225,8 +1225,8 @@ public class MainActivity extends BaseActivity
             }
         }
 
-        if(!line.equals("")) {
-            String outputLog = line + System.getProperty("line.separator");
+        if(!line.isEmpty()) {
+            String outputLog = line + System.lineSeparator();
             tvLog.append(formatLogOutputText(outputLog));
             refresh = true;
         }
@@ -1333,14 +1333,14 @@ public class MainActivity extends BaseActivity
 
     private void updateTemperaturesText(float cpuTemp) {
         if (cpuTemp > 0.0) {
-            tvCPUTemperature.setText(String.format(Locale.getDefault(), "%.0f \u2103", cpuTemp));
+            tvCPUTemperature.setText(String.format(Locale.getDefault(), "%.0f ℃", cpuTemp));
         }
         else {
             tvCPUTemperature.setText("n/a");
         }
 
         if (batteryTemp > 0.0) {
-            tvBatteryTemperature.setText(String.format(Locale.getDefault(), "%.0f \u2103", batteryTemp));
+            tvBatteryTemperature.setText(String.format(Locale.getDefault(), "%.0f ℃", batteryTemp));
         }
         else {
             tvBatteryTemperature.setText("n/a");
@@ -1592,16 +1592,7 @@ public class MainActivity extends BaseActivity
         Intent openIntent = new Intent(this, MainActivity.class);
         openIntent.setAction(OPEN_ACTION);
 
-        int flags;
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            // For Android 6 (API 23) and higher, add FLAG_IMMUTABLE
-            flags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
-        } else {
-            // For older versions, use the existing flags without FLAG_IMMUTABLE
-            flags = PendingIntent.FLAG_UPDATE_CURRENT;
-        }
-
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
         PendingIntent pendingIntentOpen = PendingIntent.getActivity(contextOfApplication, 1, openIntent, flags);
 
         // Stop intent

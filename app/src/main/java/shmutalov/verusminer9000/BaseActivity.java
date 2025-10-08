@@ -16,9 +16,9 @@ public abstract class BaseActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         sessionDepth++;
-        if(sessionDepth == 1){
-            //app came to foreground;
-        }
+        //if(sessionDepth == 1){
+        //    //app came to foreground;
+        //}
     }
 
     @Override

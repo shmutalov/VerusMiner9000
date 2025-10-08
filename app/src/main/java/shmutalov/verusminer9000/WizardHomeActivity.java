@@ -19,6 +19,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.core.content.res.ResourcesCompat;
 
 import java.text.SimpleDateFormat;
@@ -92,15 +93,26 @@ public class WizardHomeActivity extends BaseActivity {
         String sDisclaimerText = getResources().getString(R.string.disclaimer_agreement);
         String sDiclaimer = getResources().getString(R.string.disclaimer);
 
+        SpannableString ss = getSpannableString(sDisclaimerText, sDiclaimer);
+
+        TextView tvDisclaimer = view.findViewById(R.id.disclaimer);
+        tvDisclaimer.setText(ss);
+        tvDisclaimer.setMovementMethod(LinkMovementMethod.getInstance());
+        tvDisclaimer.setLinkTextColor(ResourcesCompat.getColor(getResources(), R.color.c_blue, getTheme()));
+        tvDisclaimer.setHighlightColor(Color.TRANSPARENT);
+    }
+
+    @NonNull
+    private SpannableString getSpannableString(String sDisclaimerText, String sDiclaimer) {
         SpannableString ss = new SpannableString(sDisclaimerText);
         ClickableSpan clickableSpan = new ClickableSpan() {
             @Override
-            public void onClick(View textView) {
+            public void onClick(@NonNull View textView) {
                 showDisclaimer();
             }
 
             @Override
-            public void updateDrawState(TextPaint ds) {
+            public void updateDrawState(@NonNull TextPaint ds) {
                 super.updateDrawState(ds);
                 ds.setUnderlineText(false);
             }
@@ -109,12 +121,7 @@ public class WizardHomeActivity extends BaseActivity {
         int iStart = sDisclaimerText.indexOf(sDiclaimer);
         int iEnd = iStart + sDiclaimer.length();
         ss.setSpan(clickableSpan, iStart, iEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        TextView tvDisclaimer = view.findViewById(R.id.disclaimer);
-        tvDisclaimer.setText(ss);
-        tvDisclaimer.setMovementMethod(LinkMovementMethod.getInstance());
-        tvDisclaimer.setLinkTextColor(ResourcesCompat.getColor(getResources(), R.color.c_blue, getTheme()));
-        tvDisclaimer.setHighlightColor(Color.TRANSPARENT);
+        return ss;
     }
 
     public void onEnterAddress(View view) {

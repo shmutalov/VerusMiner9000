@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -53,8 +54,8 @@ public class WizardSettingsActivity extends BaseActivity {
         btnHardwareHelp.setOnClickListener(v -> {
             // inflate the layout of the popup window
             LayoutInflater inflater = LayoutInflater.from(getApplicationContext());
-
-            View popupView = inflater.inflate(R.layout.helper_hardware_settings, null);
+            ViewGroup root = (ViewGroup)v.getRootView();
+            View popupView = inflater.inflate(R.layout.helper_hardware_settings, root, false);
             Utils.showPopup(v, inflater, popupView);
         });
 
@@ -67,7 +68,7 @@ public class WizardSettingsActivity extends BaseActivity {
         sbCores.setMax(cores);
         tvCoresMax.setText(Integer.toString(cores));
 
-        if (Config.read("cores").equals("")) {
+        if (Config.read("cores").isEmpty()) {
             sbCores.setProgress(suggested);
             tvCoresNb.setText(Integer.toString(suggested));
         } else {
@@ -77,7 +78,7 @@ public class WizardSettingsActivity extends BaseActivity {
         }
 
         // CPU Temp
-        if (!Config.read("maxcputemp").equals("")) {
+        if (!Config.read("maxcputemp").isEmpty()) {
             nMaxCPUTemp = Integer.parseInt(Config.read("maxcputemp"));
         }
 
@@ -85,7 +86,7 @@ public class WizardSettingsActivity extends BaseActivity {
         sbCPUTemp.setProgress(nProgress);
         updateCPUTemp();
 
-        if (!Config.read("maxbatterytemp").equals("")) {
+        if (!Config.read("maxbatterytemp").isEmpty()) {
             nMaxBatteryTemp = Integer.parseInt(Config.read("maxbatterytemp"));
         }
 

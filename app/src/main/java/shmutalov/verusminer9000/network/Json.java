@@ -17,15 +17,6 @@ public class Json {
 
     private static final String LOG_TAG = "MiningSvc";
 
-    private static final Json ourInstance = new Json();
-
-    public static Json getInstance() {
-        return ourInstance;
-    }
-
-    private Json() {
-    }
-
     public static String fetch(String url) {
 
         StringBuilder data = new StringBuilder();

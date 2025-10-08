@@ -37,6 +37,7 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -44,6 +45,8 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputLayout;
+
+import java.util.Objects;
 
 import shmutalov.verusminer9000.api.PoolItem;
 import shmutalov.verusminer9000.api.ProviderManager;
@@ -294,7 +297,8 @@ public class SettingsFragment extends Fragment {
             boolean checked = ((SwitchMaterial)v).isChecked();
             if (checked) {
                 // inflate the layout of the popup window
-                View popupView = inflater.inflate(R.layout.warning_amayc, null);
+                ViewGroup root = (ViewGroup)getView();
+                View popupView = inflater.inflate(R.layout.warning_amayc, root, false);
                 Utils.showPopup(v, inflater, popupView);
             }
 
@@ -520,20 +524,16 @@ public class SettingsFragment extends Fragment {
         bQrCode.setOnClickListener(v -> {
             Context appContext1 = MainActivity.getContextOfApplication();
 
-            if (Build.VERSION.SDK_INT >= 23) {
-                if (ContextCompat.checkSelfPermission(appContext1, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(new String[]{Manifest.permission.CAMERA}, 100);
-                } else {
-                    startQrCodeActivity();
-                }
+            if (ContextCompat.checkSelfPermission(appContext1, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.CAMERA}, 100);
             } else {
-                Toast.makeText(appContext1, "This version of Android does not support Qr Code.", Toast.LENGTH_LONG).show();
+                startQrCodeActivity();
             }
         });
 
         Button btnMineScala = view.findViewById(R.id.btnMineScala);
         btnMineScala.setOnClickListener(v -> {
-            final Dialog dialog = new Dialog(getContext());
+            final Dialog dialog = new Dialog(requireContext());
             dialog.setContentView(R.layout.mine_scala);
             dialog.setCancelable(false);
 
@@ -552,26 +552,25 @@ public class SettingsFragment extends Fragment {
 
         Button btnHardwareHelp = view.findViewById(R.id.btnHardwareHelp);
         btnHardwareHelp.setOnClickListener(v -> {
+            ViewGroup root = (ViewGroup)getView();
             // inflate the layout of the popup window
-            View popupView = inflater.inflate(R.layout.helper_hardware_settings, null);
+            View popupView = inflater.inflate(R.layout.helper_hardware_settings, root, false);
             Utils.showPopup(v, inflater, popupView);
         });
 
         ImageView btnPerformanceModeHelp = view.findViewById(R.id.btnPerformanceModeHelp);
         btnPerformanceModeHelp.setOnClickListener(v -> {
+            ViewGroup root = (ViewGroup)getView();
             // inflate the layout of the popup window
-            View popupView = inflater.inflate(R.layout.helper_hardware_settings, null);
-            TextView tvMessage = popupView.findViewById(R.id.message);
-            if(tvMessage != null) {
-                tvMessage.setText(R.string.performancemode_help);
-            }
+            View popupView = inflater.inflate(R.layout.helper_performance_mode, root, false);
             Utils.showPopup(v, inflater, popupView);
         });
 
         Button btnAmaycWarning = view.findViewById(R.id.btnAmaycWarning);
         btnAmaycWarning.setOnClickListener(v -> {
+            ViewGroup root = (ViewGroup)getView();
             // inflate the layout of the popup window
-            View popupView = inflater.inflate(R.layout.warning_amayc, null);
+            View popupView = inflater.inflate(R.layout.warning_amayc, root, false);
             Utils.showPopup(v, inflater, popupView);
         });
 
@@ -618,7 +617,8 @@ public class SettingsFragment extends Fragment {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         Context appContext = MainActivity.getContextOfApplication();
 
         if (requestCode == 100) {
@@ -646,7 +646,7 @@ public class SettingsFragment extends Fragment {
 
     private void requestFocus(View view) {
         if (view.requestFocus()) {
-            getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+            requireActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
         }
     }
 }

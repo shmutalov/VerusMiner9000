@@ -42,6 +42,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -70,58 +71,6 @@ public class Tools {
             return buf.toString();
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public static void copyFile(Context context, String assetFilePath, String localFilePath) {
-        try {
-            InputStream in = context.getAssets().open(assetFilePath);
-            FileOutputStream out = new FileOutputStream(localFilePath);
-            int read;
-            byte[] buffer = new byte[4096];
-            while ((read = in.read(buffer)) > 0) {
-                out.write(buffer, 0, read);
-            }
-            out.close();
-            in.close();
-
-            File bin = new File(localFilePath);
-            bin.setExecutable(true);
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void copyDirectoryContents(Context context, String assetFilePath, String localFilePath) {
-
-        String[] folder;
-
-        try {
-            folder = context.getAssets().list(assetFilePath);
-        } catch (Exception e) {
-            return;
-        }
-
-        assert folder != null;
-        for (final String f : folder) {
-
-            boolean isDirectory = isAssetDirectory(context,assetFilePath + "/" + f);
-
-            if (!isDirectory) {
-                Log.i(LOG_TAG, "copy file: source:" + assetFilePath + "/" + f + " dest:" + localFilePath + "/" + f);
-                File file = new File(localFilePath + "/" + f);
-                if (file.exists() && file.isFile()) {
-                    Log.i(LOG_TAG, "copy file delete: source:" + assetFilePath + "/" + f + " dest:" + localFilePath + "/" + f);
-                    file.delete();
-                }
-                copyFile(context, assetFilePath + "/" + f, localFilePath + "/" + f);
-            } else {
-                Log.i(LOG_TAG, "make directory: source:" + assetFilePath + "/" + f + " dest:" + localFilePath + "/" + f);
-                File dir = new File(localFilePath + "/" + f);
-                dir.mkdir();
-                copyDirectoryContents(context, assetFilePath + "/" + f, localFilePath + "/" + f);
-            }
         }
     }
 
@@ -185,34 +134,6 @@ public class Tools {
         }
 
         return isDirectory;
-    }
-
-    public static void logDirectoryFiles(final File folder) {
-        for (final File f : Objects.requireNonNull(folder.listFiles())) {
-
-            if (f.isDirectory()) {
-                logDirectoryFiles(f);
-            }
-
-            if (f.isFile()) {
-                Log.i(LOG_TAG, f.getName());
-            }
-        }
-    }
-
-    public static void deleteDirectoryContents(final File folder) {
-        for (final File f : Objects.requireNonNull(folder.listFiles())) {
-
-            if (f.isDirectory()) {
-                Log.i(LOG_TAG, "Delete Directory: " + f.getName());
-                deleteDirectoryContents(f);
-            }
-
-            if (f.isFile()) {
-                Log.i(LOG_TAG, "Delete File: " + f.getName());
-                f.delete();
-            }
-        }
     }
 
     public static void writeConfig(String configTemplate, MiningConfig miningConfig, String privatePath) {
@@ -329,30 +250,31 @@ public class Tools {
     static float getCPUTempFromFile(String sFile) {
         float output = 0.0f;
 
-        RandomAccessFile reader;
         String line;
+        try (RandomAccessFile reader = new RandomAccessFile(sFile, "r")) {
+            try {
+                line = reader.readLine();
 
-        try {
-            reader = new RandomAccessFile(sFile, "r");
-            line = reader.readLine();
+                if (line != null) {
+                    output = Float.parseFloat(line);
 
-            if (line != null) {
-                output = Float.parseFloat(line);
+                    //if (output > 1000.0f && Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
+                    if (output > 1000.0f) {
+                        output /= 1000.0f;
+                    }
 
-                //if (output > 1000.0f && Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
-                if (output > 1000.0f) {
-                    output /= 1000.0f;
+                    if (output > 100.0f) { // error while reading file
+                        sCPUTempSysFile = "";
+                        return 0.0f;
+                    }
                 }
-
-                if(output > 100.0f) { // error while reading file
-                    sCPUTempSysFile = "";
-                    return 0.0f;
-                }
+            } catch (IOException e) {
+                sCPUTempSysFile = "";
+                e.printStackTrace();
+                return 0.0f;
             }
         } catch (IOException e) {
-            sCPUTempSysFile = "";
             e.printStackTrace();
-            return 0.0f;
         }
 
         return output;
@@ -415,7 +337,7 @@ public class Tools {
         String[] byteUnits = {"H", "KH", "MH", "GH", "TH", "PH"};
 
         while (bn.compareTo(bnThousand) > 0) {
-            bn = bn.divide(bnThousand);
+            bn = bn.divide(bnThousand, 2, RoundingMode.DOWN);
             i++;
         }
 

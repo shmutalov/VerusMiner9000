@@ -34,7 +34,7 @@ public final class ProviderManager {
     public static PoolItem getPoolById(String idx) {
         int index = Integer.parseInt(idx);
 
-        if (idx.equals("") || mPools.size() < index || mPools.size() == 0) {
+        if (idx.isEmpty() || mPools.size() < index || mPools.isEmpty()) {
             return null;
         }
 
@@ -49,7 +49,7 @@ public final class ProviderManager {
         }
 
         String sp = Config.read("selected_pool");
-        if (sp.equals("")) {
+        if (sp.isEmpty()) {
             return null;
         }
 

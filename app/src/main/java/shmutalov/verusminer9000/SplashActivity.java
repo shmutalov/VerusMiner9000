@@ -38,7 +38,7 @@ public class SplashActivity extends Activity {
 
             //startActivity(new Intent(SplashActivity.this, WizardHomeActivity.class));
 
-            if (hide_setup_wizard.equals("")) {
+            if (hide_setup_wizard.isEmpty()) {
                 startActivity(new Intent(SplashActivity.this, WizardHomeActivity.class));
             } else {
                 startActivity(new Intent(SplashActivity.this, MainActivity.class));

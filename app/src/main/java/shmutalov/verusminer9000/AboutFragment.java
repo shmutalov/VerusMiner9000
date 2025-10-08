@@ -83,8 +83,9 @@ public class AboutFragment extends Fragment {
 
         Button btnDonationAddressesHelp = view.findViewById(R.id.btnDonationsHelp);
         btnDonationAddressesHelp.setOnClickListener(v -> {
+            ViewGroup root = (ViewGroup)getView();
             // inflate the layout of the popup window
-            View popupView = inflater.inflate(R.layout.helper_donation_addresses, null);
+            View popupView = inflater.inflate(R.layout.helper_donation_addresses, root, false);
             Utils.showPopup(v, inflater, popupView);
         });
 

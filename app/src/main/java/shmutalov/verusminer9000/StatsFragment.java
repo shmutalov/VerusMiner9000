@@ -51,7 +51,7 @@ public class StatsFragment extends Fragment {
         tvViewStatsOnline = view.findViewById(R.id.checkstatsonline);
         tvViewStatsOnline.setPaintFlags(tvViewStatsOnline.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
         tvViewStatsOnline.setEnabled(false);
-        tvViewStatsOnline.setTextColor(ResourcesCompat.getColor(getResources(), R.color.c_grey, getContext().getTheme()));
+        tvViewStatsOnline.setTextColor(ResourcesCompat.getColor(getResources(), R.color.c_grey, requireContext().getTheme()));
 
         ProviderManager.request.setListener(statsListener).start();
         ProviderManager.afterSave();
@@ -148,10 +148,10 @@ public class StatsFragment extends Fragment {
         tvViewStatsOnline.setEnabled(enable);
 
         if (enable) {
-            tvViewStatsOnline.setTextColor(ResourcesCompat.getColor(getResources(), R.color.c_blue, getContext().getTheme()));
+            tvViewStatsOnline.setTextColor(ResourcesCompat.getColor(getResources(), R.color.c_blue, requireContext().getTheme()));
         }
         else {
-            tvViewStatsOnline.setTextColor(ResourcesCompat.getColor(getResources(), R.color.c_grey, getContext().getTheme()));
+            tvViewStatsOnline.setTextColor(ResourcesCompat.getColor(getResources(), R.color.c_grey, requireContext().getTheme()));
         }
     }
 
@@ -159,7 +159,7 @@ public class StatsFragment extends Fragment {
         if(getContext() == null)
             return false;
 
-        if(Config.read("address").equals("")) {
+        if(Config.read("address").isEmpty()) {
             Toast.makeText(getContext(),"Wallet address is empty.", Toast.LENGTH_LONG).show();
             enableOnlineStats(false);
             return false;

@@ -6,10 +6,8 @@ package shmutalov.verusminer9000;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -17,11 +15,9 @@ import shmutalov.verusminer9000.api.PoolItem;
 import shmutalov.verusminer9000.api.ProviderManager;
 
 public class WizardPoolActivity extends BaseActivity {
-    private static final String LOG_TAG = "WizardPoolActivity";
 
     private int selectedPoolIndex = 1;
     private LinearLayout poolContainer;
-    private int poolCount = 0;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -45,8 +41,6 @@ public class WizardPoolActivity extends BaseActivity {
         for (int i = 1; i < pools.length; i++) {
             addPoolItem(pools[i], i);
         }
-
-        poolCount = pools.length - 1; // Exclude custom pool
 
         // Select first pool by default
         setHover(selectedPoolIndex);
