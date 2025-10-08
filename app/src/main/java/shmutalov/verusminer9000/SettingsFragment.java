@@ -68,10 +68,22 @@ public class SettingsFragment extends Fragment {
     private TextView tvCPUMaxTemp, tvBatteryMaxTemp, tvCooldown;
 
     private ActivityResultLauncher<Intent> qrScannerLauncher;
+    private ActivityResultLauncher<String> cameraPermissionLauncher;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        // Register camera permission result handler
+        cameraPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (isGranted) {
+                        startQrCodeActivity();
+                    } else {
+                        Toast.makeText(MainActivity.getContextOfApplication(), "Camera Permission Denied.", Toast.LENGTH_LONG).show();
+                    }
+                });
+
         // Register QR scanner result handler
         qrScannerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -525,7 +537,7 @@ public class SettingsFragment extends Fragment {
             Context appContext1 = MainActivity.getContextOfApplication();
 
             if (ContextCompat.checkSelfPermission(appContext1, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[]{Manifest.permission.CAMERA}, 100);
+                cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
             } else {
                 startQrCodeActivity();
             }
@@ -613,20 +625,6 @@ public class SettingsFragment extends Fragment {
             qrScannerLauncher.launch(intent);
         }catch (Exception e) {
             Toast.makeText(MainActivity.getContextOfApplication(), e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        Context appContext = MainActivity.getContextOfApplication();
-
-        if (requestCode == 100) {
-            if (permissions[0].equals(Manifest.permission.CAMERA) && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startQrCodeActivity();
-            } else {
-                Toast.makeText(appContext,"Camera Permission Denied.", Toast.LENGTH_LONG).show();
-            }
         }
     }
 

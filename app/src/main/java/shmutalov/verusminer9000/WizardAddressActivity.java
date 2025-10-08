@@ -27,6 +27,8 @@ import com.google.android.material.textfield.TextInputLayout;
 
 public class WizardAddressActivity extends BaseActivity {
     private ActivityResultLauncher<Intent> qrScannerLauncher;
+    private ActivityResultLauncher<String> cameraPermissionLauncher;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,6 +38,17 @@ public class WizardAddressActivity extends BaseActivity {
             finish();
             return;
         }
+
+        // Register camera permission result handler
+        cameraPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (isGranted) {
+                        startQrCodeActivity();
+                    } else {
+                        Toast.makeText(this, "Camera Permission Denied.", Toast.LENGTH_LONG).show();
+                    }
+                });
 
         // Register QR scanner result handler
         qrScannerLauncher = registerForActivityResult(
@@ -65,7 +78,7 @@ public class WizardAddressActivity extends BaseActivity {
         Context appContext = WizardAddressActivity.this;
 
         if (ContextCompat.checkSelfPermission(appContext, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.CAMERA}, 100);
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
         } else {
             startQrCodeActivity();
         }
@@ -77,21 +90,6 @@ public class WizardAddressActivity extends BaseActivity {
             qrScannerLauncher.launch(intent);
         } catch (Exception e) {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        Context appContext = WizardAddressActivity.this;
-
-        if (requestCode == 100) {
-            if (permissions[0].equals(Manifest.permission.CAMERA) && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startQrCodeActivity();
-            }
-            else {
-                Toast.makeText(appContext,"Camera Permission Denied.", Toast.LENGTH_LONG).show();
-            }
         }
     }
 
