@@ -77,7 +77,6 @@ public class VerusBinMiningService extends AbstractMiningService {
     private String configTemplate;
     private String privatePath;
     private OutputReaderThread outputHandler;
-    private InputReaderThread inputHandler;
     private ProcessMonitor procMon;
     private PowerManager.WakeLock wl;
     private long accepted = 0;
@@ -110,7 +109,7 @@ public class VerusBinMiningService extends AbstractMiningService {
     {
         super.onCreate();
         privatePath = getFilesDir().getAbsolutePath();
-        Tools.deleteDirectoryContents(new File(privatePath));
+        // No longer need to delete directory contents - binaries are in native lib dir
 
         reqQueue = Volley.newRequestQueue(this);
     }
@@ -149,60 +148,32 @@ public class VerusBinMiningService extends AbstractMiningService {
 
     private void copyMinerFiles() {
         String abi = Tools.getABI();
-        String assetPath = "";
-        String libraryPath = "";
         String configPath = "";
 
         Log.i(LOG_TAG, "MINING SERVICE ABI: " + abi);
 
-        String assetExtension = miner_ccminer;
-
         if (Arrays.asList(SUPPORTED_ARCHITECTURES).contains(abi)) {
-            assetPath = assetExtension + "/" + abi;
-            libraryPath = "lib" + "/" + abi;
-            configPath = assetExtension + "/config.json";
+            configPath = miner_ccminer + "/config.json";
         } else {
-            Log.i(LOG_TAG, "NO ASSET PATH");
+            Log.i(LOG_TAG, "NO SUPPORTED ABI");
         }
 
-        Log.i(LOG_TAG, "ASSET PATH: " + assetPath);
-        Log.i(LOG_TAG, "LAST ASSET PATH: " + lastAssetPath);
         Log.i(LOG_TAG, "ABI: " + abi);
 
-        if (!assetPath.equals(lastAssetPath)) {
-            Tools.deleteDirectoryContents(new File(privatePath));
-            Tools.copyDirectoryContents(this, libraryPath, privatePath);
-            Tools.copyDirectoryContents(this, assetPath, privatePath);
+        // Load config template (only config.json remains in assets)
+        if (configTemplate == null) {
             configTemplate = Tools.loadConfigTemplate(this, configPath);
-            Tools.logDirectoryFiles(new File(privatePath));
-            lastAssetPath = assetPath;
         }
 
-        // Fix for Android 10+ (SDK 29+): Always ensure ccminer binary has executable permissions
-        File ccminerBinary = new File(privatePath, miner_ccminer);
-        if (ccminerBinary.exists()) {
-            // Try setExecutable() first
-            boolean execSet = ccminerBinary.setExecutable(true, false);
-            Log.i(LOG_TAG, "setExecutable() result: " + execSet);
+        // No longer need to copy binaries - they're in native library directory
+        // Just log the native lib directory for debugging
+        String nativeLibDir = getApplicationInfo().nativeLibraryDir;
+        Log.i(LOG_TAG, "Native library directory: " + nativeLibDir);
 
-            // Force chmod as backup - more reliable on some devices
-            try {
-                String chmodCmd = "chmod 755 " + ccminerBinary.getAbsolutePath();
-                Log.i(LOG_TAG, "Running: " + chmodCmd);
-                Process chmod = Runtime.getRuntime().exec(chmodCmd);
-                int chmodResult = chmod.waitFor();
-                Log.i(LOG_TAG, "chmod result: " + chmodResult);
-
-                // Verify it worked
-                boolean canExecute = ccminerBinary.canExecute();
-                Log.i(LOG_TAG, "Binary canExecute: " + canExecute);
-            } catch (Exception e) {
-                Log.e(LOG_TAG, "Error setting chmod: " + e.getMessage());
-                e.printStackTrace();
-            }
-        } else {
-            Log.e(LOG_TAG, "ccminer binary not found at: " + ccminerBinary.getAbsolutePath());
-        }
+        File ccminerBinary = new File(nativeLibDir, "lib" + miner_ccminer + ".so");
+        Log.i(LOG_TAG, "ccminer binary location: " + ccminerBinary.getAbsolutePath());
+        Log.i(LOG_TAG, "ccminer binary exists: " + ccminerBinary.exists());
+        Log.i(LOG_TAG, "ccminer binary canExecute: " + ccminerBinary.canExecute());
     }
 
     private static String createCpuConfig(int cores, int threads, int intensity) {
@@ -210,7 +181,7 @@ public class VerusBinMiningService extends AbstractMiningService {
 
         for (int core = 0; core < cores; core++) {
             for (int thread = 0; thread < threads; thread++) {
-                if (!cpuConfig.toString().equals("")) {
+                if (!cpuConfig.toString().isEmpty()) {
                     cpuConfig.append(",");
                 }
                 cpuConfig
@@ -266,11 +237,6 @@ public class VerusBinMiningService extends AbstractMiningService {
             outputHandler = null;
         }
 
-        if (inputHandler != null) {
-            inputHandler.interrupt();
-            inputHandler = null;
-        }
-
         if (process != null) {
             process.destroy();
             process = null;
@@ -310,7 +276,7 @@ public class VerusBinMiningService extends AbstractMiningService {
         new startMiningAsync().execute(lastConfig);
     }
 
-    class startMiningAsync extends AsyncTask<MiningConfig, Void, String> {
+     class startMiningAsync extends AsyncTask<MiningConfig, Void, String> {
         private MiningConfig config;
 
         protected String doInBackground(MiningConfig... config) {
@@ -361,11 +327,14 @@ public class VerusBinMiningService extends AbstractMiningService {
         try {
             Tools.writeConfig(configTemplate, config, privatePath);
 
-            // Android 10+ (SDK 29+) requires absolute path for executables due to SELinux
-            String ccminerPath = new File(privatePath, miner_ccminer).getAbsolutePath();
+            // Use native library directory for ccminer binary (targetSdk 33 compatible)
+            String nativeLibDir = getApplicationInfo().nativeLibraryDir;
+            String ccminerPath = new File(nativeLibDir, "lib" + miner_ccminer + ".so").getAbsolutePath();
+
+            Log.i(LOG_TAG, "Using ccminer from: " + ccminerPath);
 
             String[] args = {
-                    ccminerPath,  // Use absolute path instead of ./ccminer
+                    ccminerPath,  // Use native library path
                     "--no-banner",
                     "--no-color",
                     "-a", algo,
@@ -381,7 +350,7 @@ public class VerusBinMiningService extends AbstractMiningService {
 
             pb.directory(new File(privatePath));
 
-            pb.environment().put("LD_LIBRARY_PATH", privatePath);
+            pb.environment().put("LD_LIBRARY_PATH", nativeLibDir);
 
             pb.redirectErrorStream();
 
@@ -396,9 +365,6 @@ public class VerusBinMiningService extends AbstractMiningService {
 
             outputHandler = new VerusBinMiningService.OutputReaderThread(process.getInputStream());
             outputHandler.start();
-
-            inputHandler = new VerusBinMiningService.InputReaderThread(process.getOutputStream());
-            inputHandler.start();
 
             if (procMon != null) {
                 procMon.interrupt();
@@ -470,6 +436,7 @@ public class VerusBinMiningService extends AbstractMiningService {
                 raiseMiningServiceStateChange(true);
                 if (proc != null) {
                     proc.waitFor();
+
                     Log.i(LOG_TAG, "process exit: " + proc.exitValue());
                 }
                 raiseMiningServiceStateChange(false);
@@ -491,7 +458,7 @@ public class VerusBinMiningService extends AbstractMiningService {
         }
 
         private void processLogLine(String line) {
-            output.append(line).append(System.getProperty("line.separator"));
+            output.append(line).append(System.lineSeparator());
 
             // [2020-10-23 14:30:33] accepted: 2/3 (diff 274824.194), 1472.33 kH/s yes!
 
@@ -526,7 +493,7 @@ public class VerusBinMiningService extends AbstractMiningService {
             }
 
             if (output.length() > Config.logMaxLength) {
-                output.delete(0, output.indexOf(Objects.requireNonNull(System.getProperty("line.separator")), Config.logPruneLength) + 1);
+                output.delete(0, output.indexOf(Objects.requireNonNull(System.lineSeparator()), Config.logPruneLength) + 1);
             }
 //
             raiseMiningServiceStatusChange(line, speed, max, accepted, total, difficulty, connection);
@@ -553,44 +520,5 @@ public class VerusBinMiningService extends AbstractMiningService {
         public StringBuilder getOutput() {
             return output;
         }
-    }
-
-    private class InputReaderThread extends Thread {
-
-        //private final OutputStream outputStream;
-        //private BufferedWriter writer;
-
-        InputReaderThread(OutputStream outputStream) {
-            //this.outputStream = outputStream;
-        }
-
-        public void run() {
-            try {
-                //writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-
-                while (true) {
-                    try {
-                        Thread.sleep(250);
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
-
-                    if (currentThread().isInterrupted()) return;
-                }
-
-            } catch (Exception e) {
-                Log.w(LOG_TAG, "exception", e);
-            }
-        }
-
-//        public void sendInput(String s) {
-
-//            try {
-//                writer.write(s);
-//                writer.flush();
-//            } catch (Exception e) {
-//                Log.w(LOG_TAG, "exception", e);
-//            }
-//        }
     }
 }

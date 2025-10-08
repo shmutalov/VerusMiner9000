@@ -103,9 +103,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import shmutalov.verusminer9000.api.IProviderListener;
 import shmutalov.verusminer9000.api.PoolItem;
-import shmutalov.verusminer9000.api.ProviderData;
 import shmutalov.verusminer9000.api.ProviderManager;
 import shmutalov.verusminer9000.miner.AbstractMiningService;
 import shmutalov.verusminer9000.miner.AbstractMiningServiceBinder;
@@ -134,7 +132,6 @@ public class MainActivity extends BaseActivity
     private boolean validArchitecture = true;
 
     private AbstractMiningServiceBinder binder;
-    private boolean bPayoutDataReceived = false;
 
     private boolean bIgnoreCPUCoresEvent = false;
     private boolean bIsRestartEvent = false;
@@ -245,7 +242,7 @@ public class MainActivity extends BaseActivity
         navigationView.setOnNavigationItemSelectedListener(this);
 
         // Open Settings the first time the app is launched
-        if (Config.read("address").equals("")) {
+        if (Config.read("address").isEmpty()) {
             navigationView.getMenu().getItem(2).setChecked(true);
 
             SettingsFragment fragment = (SettingsFragment) getSupportFragmentManager().findFragmentByTag("settings_fragment");
@@ -1594,12 +1591,23 @@ public class MainActivity extends BaseActivity
         // Open intent
         Intent openIntent = new Intent(this, MainActivity.class);
         openIntent.setAction(OPEN_ACTION);
-        PendingIntent pendingIntentOpen = PendingIntent.getActivity(contextOfApplication, 1, openIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        int flags;
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            // For Android 6 (API 23) and higher, add FLAG_IMMUTABLE
+            flags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
+        } else {
+            // For older versions, use the existing flags without FLAG_IMMUTABLE
+            flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        }
+
+        PendingIntent pendingIntentOpen = PendingIntent.getActivity(contextOfApplication, 1, openIntent, flags);
 
         // Stop intent
         Intent stopIntent = new Intent(this, NotificationsReceiver.class);
         stopIntent.setAction(STOP_ACTION);
-        PendingIntent pendingIntentStop = PendingIntent.getBroadcast(contextOfApplication, 1, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntentStop = PendingIntent.getBroadcast(contextOfApplication, 1, stopIntent, flags);
 
         notificationBuilder.setContentTitle(getResources().getString(R.string.devicemining));
         notificationBuilder.setContentIntent(pendingIntentOpen);

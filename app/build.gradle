@@ -2,8 +2,8 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 33
-    buildToolsVersion "33.0.2"
+    compileSdkVersion 36
+    buildToolsVersion '35.0.0'
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -12,8 +12,8 @@ android {
 
     defaultConfig {
         applicationId "shmutalov.verusminer9000"
-        minSdkVersion 22
-        targetSdkVersion 28 // Android 10+ W^X policy prevents executing binaries from private storage on SDK 29+
+        minSdkVersion 23
+        targetSdkVersion 36 // Now using native library directory for binaries (jniLibs) - compatible with Android 10+ W^X policy
         versionCode 9
         versionName "0.0.16"
         buildConfigField "long", "BUILD_TIME", System.currentTimeMillis() + "L"
@@ -21,10 +21,6 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
-    lintOptions {
-        checkReleaseBuilds false
-        abortOnError false
-    }
 
     buildTypes {
         release {
@@ -32,13 +28,23 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    namespace 'shmutalov.verusminer9000'
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging true
+        }
+    }
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
 }
 
 dependencies {
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+    implementation 'com.google.android.material:material:1.13.0'
     implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
-    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'org.ocpsoft.prettytime:prettytime:5.0.7.Final'
     implementation 'com.android.volley:volley:1.2.1'
